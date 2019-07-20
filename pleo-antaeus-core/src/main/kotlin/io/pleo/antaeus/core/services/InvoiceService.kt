@@ -10,8 +10,13 @@ import io.pleo.antaeus.models.Invoice
 import io.pleo.antaeus.models.InvoiceStatus
 
 class InvoiceService(private val dal: AntaeusDal) {
-    fun fetchAll(status: InvoiceStatus?): List<Invoice> {
-        if (status == null) return dal.fetchInvoices() else return dal.fetchInvoicesWithStatus(status = status!!)
+
+    fun fetchAll(status: InvoiceStatus? = null): List<Invoice>{
+        status?.let{
+            return dal.fetchInvoicesWithStatus(status = status)
+        } ?: run {
+            return dal.fetchInvoices()
+        }
     }
 
     fun fetch(id: Int): Invoice {

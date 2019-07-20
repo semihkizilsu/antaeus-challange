@@ -12,11 +12,13 @@ import io.pleo.antaeus.models.Customer
 import io.pleo.antaeus.models.Invoice
 import io.pleo.antaeus.models.InvoiceStatus
 import io.pleo.antaeus.models.Money
+import io.pleo.antaeus.models.CustomerStatus
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
+import org.jetbrains.exposed.sql.update
 
 class AntaeusDal(private val db: Database) {
     fun fetchInvoice(id: Int): Invoice? {
@@ -53,6 +55,23 @@ class AntaeusDal(private val db: Database) {
         return fetchInvoice(id!!)
     }
 
+    fun changeInvoiceStatus(id: Int, status: InvoiceStatus) {
+        transaction(db) {
+            //Change invoice status for given invoice id
+            InvoiceTable.update({ InvoiceTable.id.eq(id) }) {
+                it[this.status] = status.toString()
+            }
+        }
+    }
+
+    fun fetchInvoicesWithStatus(status: InvoiceStatus): List<Invoice> {
+        return transaction(db) {
+            InvoiceTable
+                .select { InvoiceTable.status.eq(status.toString()) }
+                .map { it.toInvoice() }
+        }
+    }
+
     fun fetchCustomer(id: Int): Customer? {
         return transaction(db) {
             CustomerTable
@@ -70,14 +89,24 @@ class AntaeusDal(private val db: Database) {
         }
     }
 
-    fun createCustomer(currency: Currency): Customer? {
+    fun createCustomer(currency: Currency, status: CustomerStatus): Customer? {
         val id = transaction(db) {
             // Insert the customer and return its new id.
             CustomerTable.insert {
                 it[this.currency] = currency.toString()
+                it[this.status] = status.toString()
             } get CustomerTable.id
         }
 
         return fetchCustomer(id!!)
+    }
+
+    fun changeCustomerStatus(id: Int, status: CustomerStatus) {
+        transaction(db) {
+            //Change customer status for given id
+            CustomerTable.update({ CustomerTable.id.eq(id) }) {
+                it[this.status] = status.toString()
+            }
+        }
     }
 }

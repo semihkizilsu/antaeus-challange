@@ -18,4 +18,5 @@ object InvoiceTable : Table() {
 object CustomerTable : Table() {
     val id = integer("id").autoIncrement().primaryKey()
     val currency = varchar("currency", 3)
+    val status = text("status")
 }

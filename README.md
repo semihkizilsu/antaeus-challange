@@ -53,3 +53,14 @@ Happy hacking 😁!
 * [kotlin-logging](https://github.com/MicroUtils/kotlin-logging) - Simple logging framework for Kotlin
 * [JUnit 5](https://junit.org/junit5/) - Testing framework
 * [Mockk](https://mockk.io/) - Mocking library
+
+## What I've Done
+First of all it was very satisfied challenge to me because I've never use Kotlin as a programing language, mockk as a mocking framework and Javalin as a REST framework before. I aimed develop a successfully working version of the challange. My first commits are about the main structure and the latests are to improve the code quality. Challenge takes between 20 - 25 hours for me. For this challenge I studied Kotlin syntax a few hours. 
+
+* Invoice amounts were supposed as subscription fees.
+* Payment process was thought as scheduled. There could be a scheduled service which calls /rest/v1/payments POST API at every first day of the months. If there will be any error while charging process service will log the error automatically. 
+* /rest/v1/payments/{:id} POST API charges given invoice. This one can be called from any UI application.
+* Both APIs check the status of invoice before charging process and return 201 status code for each successed transaction. 
+* Customer status added to the Customer model. In some cases customer status could be updated to TEMPORARYCLOSED or CLOSED.
+* Exception and REST status codes were handled in the REST API layer. Some examples added and these can be improved.
+* Some test methods are developed for testing BillingService. New methods can be developed to improve coverage.

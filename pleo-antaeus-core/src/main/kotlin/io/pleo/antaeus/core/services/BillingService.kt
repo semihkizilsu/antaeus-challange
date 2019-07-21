@@ -39,10 +39,11 @@ class BillingService(
                     ExceptionHandler.Error(cause = CheckCustomerStatusAndTryAgainException(customerId = invoice.customerId))
                 }
                 is CurrencyMismatchException -> {
-                    //customerCurrencyCode not equals invoiceCurrencyCode
-                    //STEP1: currency conversion service will be integrate
-                    //STEP2: invoiceAmount and invoiceCurrencyCode will be update to customerCurrencyCode with new service
-                    //STEP3: call payment amount again with new calculated amount and curreny
+                    /* customerCurrencyCode not equals invoiceCurrencyCode
+                        STEP1: currency conversion service will be integrate
+                        STEP2: invoiceAmount and invoiceCurrencyCode will be update to customerCurrencyCode with new service
+                        STEP3: call payment amount again with new calculated amount and currency
+                    */
                     ExceptionHandler.Error(cause = CurrencyMismatchException(invoiceId = invoice.id, customerId = invoice.customerId))
                 }
                 else -> {
@@ -53,6 +54,7 @@ class BillingService(
         }
     }
 
+    //if someone wants to charge of an invoice this method can be used
     fun payWithInvoiceId(id: Int) {
         val invoice = invoiceService.fetch(id = id)
 

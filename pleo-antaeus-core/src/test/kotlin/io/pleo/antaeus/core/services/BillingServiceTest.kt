@@ -18,7 +18,9 @@ class BillingServiceTest {
         status = InvoiceStatus.PENDING
     )
 
-    val customer = Customer(id = 5, currency = Currency.USD, status = CustomerStatus.OPEN)
+    val invoiceList = listOf(invoice)
+
+    val customer = Customer(id = 5, currency = Currency.EUR, status = CustomerStatus.OPEN)
 
     private val paymentProviderMock = mockk<PaymentProvider> { }
 
@@ -26,6 +28,7 @@ class BillingServiceTest {
 
     private val invoiceServiceMock = mockkClass(InvoiceService::class)  {
         every { fetch(123) } returns invoice
+        every { fetchAll(InvoiceStatus.PENDING) } returns invoiceList
         every { changeStatus(123, InvoiceStatus.PAID) } just Runs
     }
 
@@ -51,5 +54,22 @@ class BillingServiceTest {
         assertThrows<CustomerHasntGotEnoughMoney> {
             billingService.payWithInvoiceId(id = 123)
         }
+    }
+
+    @Test
+    fun `customer not found at payment provider`() {
+        every { paymentProviderMock.charge(invoice) } throws CustomerNotFoundException(id = invoice.customerId)
+        every { customerServiceMock.changeCustomerStatus(id = invoice.customerId, status = CustomerStatus.CLOSED)} just Runs
+        
+        assertThrows<CheckCustomerStatusAndTryAgainException> {
+            billingService.payWithInvoiceId(id = 123)
+        }
+    }
+
+    @Test
+    fun `mismatch of invoice and customer currency`() {
+        every { paymentProviderMock.charge(invoice) } throws CurrencyMismatchException(invoiceId = 123, customerId = 5)
+        billingService.payAllInvoices()
+        assertTrue(true)
     }
 }

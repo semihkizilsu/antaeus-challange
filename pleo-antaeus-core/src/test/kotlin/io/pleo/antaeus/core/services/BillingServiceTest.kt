@@ -1,26 +1,30 @@
 package io.pleo.antaeus.core.services
 
-import io.mockk.every
-import io.mockk.mockk
+import io.mockk.*
 import io.pleo.antaeus.core.external.PaymentProvider
 import io.pleo.antaeus.models.*
 import java.math.BigDecimal
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assertions.*
 
 class BillingServiceTest {
 
-    val invoice = Invoice(id = 123, customerId = 5, amount = Money(value = BigDecimal(250), currency = Currency.USD), status = InvoiceStatus.PENDING)
+    val invoice = Invoice(
+        id = 123, 
+        customerId = 5, 
+        amount = Money(value = BigDecimal(250), currency = Currency.USD), 
+        status = InvoiceStatus.PENDING)
+
     val customer = Customer(id = 5, currency = Currency.USD, status = CustomerStatus.OPEN)
 
     private val paymentProviderMock = mockk<PaymentProvider> {
-        every { charge(invoice) } returns true
+       
     }
 
-    private val customerServiceMock = mockk<CustomerService> {
+    private val customerServiceMock = mockkClass(CustomerService::class) {
     }
 
-    private val invoiceServiceMock = mockk<InvoiceService> {
+    private val invoiceServiceMock = mockkClass(InvoiceService::class)  {
         every { fetch(123) } returns invoice
         every { changeStatus(123, InvoiceStatus.PAID) } just Runs
     }
@@ -33,7 +37,14 @@ class BillingServiceTest {
 
     @Test
     fun `will charge if customer has enough money`() {
-        billingService.paymentWithInvoiceId(id = 123)
-        assertTrue(true)
+        every { paymentProviderMock.charge(invoice) } returns true
+        assertTrue(billingService.paymentWithInvoiceId(id = 123))
+    }
+
+    @Test
+    fun `not able to charge if customer hasn't enough money`() {
+        every { paymentProviderMock.charge(invoice) } returns false
+        every { customerServiceMock.changeCustomerStatus(id = invoice.customerId, status = CustomerStatus.TEMPORARYCLOSED)} just Runs
+        assertFalse(billingService.paymentWithInvoiceId(id = 123))
     }
 }

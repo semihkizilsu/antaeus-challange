@@ -66,6 +66,9 @@ class AntaeusRest (
 
                    path("customers") {
                        // URL: /rest/v1/customers
+                       // URL: /rest/v1/customers?status=OPEN
+                       // service returns all customers without any status restriction
+                       // if needed service could be changed to return customers which have given customer status 
                        get {
                            it.json(customerService.fetchAll())
                        }
@@ -78,12 +81,14 @@ class AntaeusRest (
 
                    path("payments") {
                        // URL: /rest/v1/payments
+                       // to pay all invoices which status are pending
                        post {
                            billingService.payments()
                            it.status(201)
                        }
 
                        // URL: /rest/v1/payments/{:id}
+                       // to pay given invoice if status pending
                        post(":id") {
                            billingService.paymentWithInvoiceId(it.pathParam("id").toInt())
                            it.status(201)

@@ -6,9 +6,7 @@ import io.pleo.antaeus.core.services.InvoiceService
 import io.pleo.antaeus.models.Invoice
 import io.pleo.antaeus.models.InvoiceStatus
 import io.pleo.antaeus.models.CustomerStatus
-import io.pleo.antaeus.core.exceptions.CustomerNotFoundException
-import io.pleo.antaeus.core.exceptions.CurrencyMismatchException
-import io.pleo.antaeus.core.exceptions.NetworkException
+import io.pleo.antaeus.core.exceptions.*
 
 class BillingService(
     private val paymentProvider: PaymentProvider,
@@ -33,13 +31,14 @@ class BillingService(
         catch(e: Exception) { 
             when(e){
                 is CustomerNotFoundException -> {
-                    //SK: invoiceStatus could change to UNCHARGED
+                    //if provider return this exception contact with customer and open new account for customer
                     customerService.changeCustomerStatus(id = invoice.customerId, status = CustomerStatus.CLOSED)
                 }
                 is CurrencyMismatchException -> {
-                    //SK: customerCurrencyCode not equals invoiceCurrencyCode
+                    //customerCurrencyCode not equals invoiceCurrencyCode
                     //STEP1: currency conversion service will be integrate
                     //STEP2: invoiceAmount and invoiceCurrencyCode will be update to customerCurrencyCode with new service
+                    //STEP3: call payment amount again with new calculated amount and curreny
                 }
                 else -> {
                     //Network exception handle
@@ -50,15 +49,18 @@ class BillingService(
         }
     }
 
-    fun paymentWithInvoiceId(id: Int) : Boolean{
+    fun paymentWithInvoiceId(id: Int){
         val invoice = invoiceService.fetch(id = id)
 
-        return when(invoice.status){
-            InvoiceStatus.PENDING -> payment(invoice)
-            else -> throw Exception() //throw InvoiceNotApplicableException(id)// TODO: 400 BadRequest
+        when(invoice.status){
+            InvoiceStatus.PENDING ->
+                if(!payment(invoice)) 
+                    throw CheckCustomerStatusAndTryAgainException(invoice.customerId)
+            else -> throw InvoiceNotApplicableException(invoice.id)
         }
     }
 
+    //charges all pending invoices and no need any return type
     fun payments() {
         val pendingInvoices  = invoiceService.fetchAll(status = InvoiceStatus.PENDING)
        

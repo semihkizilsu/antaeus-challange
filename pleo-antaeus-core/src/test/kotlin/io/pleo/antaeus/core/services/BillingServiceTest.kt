@@ -2,9 +2,11 @@ package io.pleo.antaeus.core.services
 
 import io.mockk.*
 import io.pleo.antaeus.core.external.PaymentProvider
+import io.pleo.antaeus.core.exceptions.CheckCustomerStatusAndTryAgainException
 import io.pleo.antaeus.models.*
 import java.math.BigDecimal
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.Assertions.*
 
 class BillingServiceTest {
@@ -38,13 +40,18 @@ class BillingServiceTest {
     @Test
     fun `will charge if customer has enough money`() {
         every { paymentProviderMock.charge(invoice) } returns true
-        assertTrue(billingService.paymentWithInvoiceId(id = 123))
+        billingService.paymentWithInvoiceId(id = 123)
+
+        assertTrue(true)
     }
 
     @Test
     fun `not able to charge if customer hasn't enough money`() {
         every { paymentProviderMock.charge(invoice) } returns false
         every { customerServiceMock.changeCustomerStatus(id = invoice.customerId, status = CustomerStatus.TEMPORARYCLOSED)} just Runs
-        assertFalse(billingService.paymentWithInvoiceId(id = 123))
+        
+        assertThrows<CheckCustomerStatusAndTryAgainException> {
+            billingService.paymentWithInvoiceId(id = 123)
+        }
     }
 }

@@ -9,6 +9,8 @@ import io.javalin.apibuilder.ApiBuilder.get
 import io.javalin.apibuilder.ApiBuilder.post
 import io.javalin.apibuilder.ApiBuilder.path
 import io.pleo.antaeus.core.exceptions.EntityNotFoundException
+import io.pleo.antaeus.core.exceptions.CheckCustomerStatusAndTryAgainException
+import io.pleo.antaeus.core.exceptions.InvoiceNotApplicableException
 import io.pleo.antaeus.core.services.*
 import mu.KotlinLogging
 
@@ -33,11 +35,24 @@ class AntaeusRest (
                 ctx.status(404)
             }
             // Unexpected exception: return HTTP 500
-            exception(Exception::class.java) { e, _ ->
+            exception(Exception::class.java) { e, ctx ->
                 logger.error(e) { "Internal server error" }
+                e.message?.let { ctx.json(e.message!!) }
             }
+
             // On 404: return message
             error(404) { ctx -> ctx.json("not found") }
+
+            //
+            exception(CheckCustomerStatusAndTryAgainException::class.java) { e, ctx ->
+                ctx.json(e.message!!) 
+                ctx.status(400)
+            }
+            
+            exception(InvoiceNotApplicableException::class.java) { e, ctx ->
+                ctx.json(e.message!!) 
+                ctx.status(400)
+            }
         }
 
     init {
@@ -83,14 +98,14 @@ class AntaeusRest (
                        // URL: /rest/v1/payments
                        // to pay all invoices which status are pending
                        post {
-                           billingService.payments()
+                           billingService.payAllInvoices()
                            it.status(201)
                        }
 
                        // URL: /rest/v1/payments/{:id}
                        // to pay given invoice if status pending
                        post(":id") {
-                           billingService.paymentWithInvoiceId(it.pathParam("id").toInt())
+                           billingService.payWithInvoiceId(it.pathParam("id").toInt())
                            it.status(201)
                        }
                    }

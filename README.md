@@ -64,3 +64,4 @@ First of all it was very satisfied challenge to me because I've never use Kotlin
 * Customer status added to the Customer model. In some cases customer status could be updated to TEMPORARYCLOSED or CLOSED.
 * Exception and REST status codes were handled in the REST API layer. Some examples added and these can be improved.
 * Some test methods are developed for testing BillingService. New methods can be developed to improve coverage.
+* CurrencyConverter service can be implemented to handle when payment provider throws CurrencyMismatchException exception. This service can convert invoice's amount and currency to customer's currency. Then charge process of invoice can be retried.
